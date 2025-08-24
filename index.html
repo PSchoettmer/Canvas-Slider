@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Before / After Slider</title>
+  <style>
+    :root { --pos: 50%; --handle-size: 36px; --accent: #c8102e; }
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;}
+    .ba-wrap{max-width:1100px;margin:24px auto;padding:0 12px;}
+    .ba-container{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:12px;background:#000;box-shadow:0 8px 28px rgba(0,0,0,.18);}
+    .ba-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;user-select:none;pointer-events:none;}
+    .ba-before-wrap{position:absolute;inset:0;width:var(--pos);overflow:hidden;transition:width .12s linear;}
+    .ba-handle{position:absolute;top:0;bottom:0;left:var(--pos);transform:translateX(-50%);width:2px;background:rgba(255,255,255,0.95);box-shadow:0 0 0 2px rgba(0,0,0,0.06);pointer-events:none;}
+    .ba-handle .ba-knob{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:var(--handle-size);height:var(--handle-size);border-radius:999px;background:white;display:flex;align-items:center;justify-content:center;font-weight:700;user-select:none;box-shadow:0 4px 12px rgba(0,0,0,.18);}
+    .ba-range{position:absolute;left:50%;transform:translateX(-50%);bottom:12px;width:78%;z-index:30;padding:6px 0;}
+    .ba-range input[type="range"]{width:100%;}
+    .ba-control{position:absolute;left:var(--pos);top:50%;transform:translate(-50%,-50%);width:var(--handle-size);height:var(--handle-size);border-radius:50%;background:transparent;border:0;outline:0;z-index:40;cursor:ew-resize;}
+    .ba-control:focus-visible{box-shadow:0 0 0 4px rgba(200,16,46,0.14);border-radius:50%;}
+    @media (max-width:600px){:root{--handle-size:30px;}} 
+  </style>
+</head>
+<body>
+  <div class="ba-wrap">
+    <div class="ba-container" id="ba-root" aria-label="Before and After image comparison" role="group">
+      <img class="ba-image" src="https://seattleu.instructure.com/courses/1622975/files/72100764/download?wrap=1" alt="After image" draggable="false" />
+      <div class="ba-before-wrap" id="ba-before-wrap" style="width:50%;">
+        <img class="ba-image" src="https://seattleu.instructure.com/courses/1622975/files/72100580/download?wrap=1" alt="Before image" draggable="false" />
+      </div>
+      <div class="ba-handle" id="ba-handle" aria-hidden="true">
+        <div class="ba-knob">◀▶</div>
+      </div>
+      <button class="ba-control" id="ba-control" aria-label="Adjust before/after" title="Drag or use arrow keys to adjust"></button>
+      <div class="ba-range" aria-hidden="true">
+        <input id="ba-range" type="range" min="0" max="100" value="50" />
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      try {
+        const root = document.getElementById('ba-root');
+        const beforeWrap = document.getElementById('ba-before-wrap');
+        const handle = document.getElementById('ba-handle');
+        const control = document.getElementById('ba-control');
+        const range = document.getElementById('ba-range');
+        function setPos(percent) {
+          percent = Math.max(0, Math.min(100, percent));
+          const pct = percent + '%';
+          root.style.setProperty('--pos', pct);
+          beforeWrap.style.width = pct;
+          handle.style.left = pct;
+          control.style.left = pct;
+          range.value = String(Math.round(percent));
+        }
+        setPos(50);
+        let dragging = false;
+        control.addEventListener('pointerdown', (ev) => { ev.preventDefault(); control.setPointerCapture(ev.pointerId); dragging = true; });
+        control.addEventListener('pointerup', (ev) => { try { control.releasePointerCapture(ev.pointerId); } catch(e){} dragging = false; });
+        document.addEventListener('pointermove', (ev) => { if (!dragging) return; updateFromEvent(ev); });
+        root.addEventListener('pointerdown', (ev) => { if (ev.target === range) return; ev.preventDefault(); dragging = true; updateFromEvent(ev); });
+        document.addEventListener('pointerup', () => dragging = false);
+        function updateFromEvent(ev) { const rect = root.getBoundingClientRect(); const x = ev.clientX - rect.left; const pct = (x / rect.width) * 100; setPos(pct); }
+        range.addEventListener('input', function (ev) { setPos(Number(ev.target.value)); });
+        control.addEventListener('keydown', function (ev) { const step = ev.shiftKey ? 10 : 2; let v = Number(range.value); if (ev.key === 'ArrowLeft' || ev.key === 'ArrowDown') { v = v - step; setPos(v); ev.preventDefault(); } else if (ev.key === 'ArrowRight' || ev.key === 'ArrowUp') { v = v + step; setPos(v); ev.preventDefault(); } else if (ev.key === 'Home') { setPos(0); ev.preventDefault(); } else if (ev.key === 'End') { setPos(100); ev.preventDefault(); } });
+      } catch (err) { console.warn('Before/After slider script error', err); }
+    })();
+  </script>
+</body>
+</html>
